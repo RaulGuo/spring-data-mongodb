@@ -35,6 +35,7 @@ import org.springframework.lang.Nullable;
  *
  * @author Jon Brisbin
  * @author Oliver Gierke
+ * @author Mark Paluch
  */
 public class MongoMappingContext extends AbstractMappingContext<BasicMongoPersistentEntity<?>, MongoPersistentProperty>
 		implements ApplicationContextAware {
@@ -68,7 +69,7 @@ public class MongoMappingContext extends AbstractMappingContext<BasicMongoPersis
 	 */
 	@Override
 	protected boolean shouldCreatePersistentEntityFor(TypeInformation<?> type) {
-		return !MongoSimpleTypes.HOLDER.isSimpleType(type.getType()) && !AbstractMap.class.isAssignableFrom(type.getType());
+		return super.shouldCreatePersistentEntityFor(type) && !AbstractMap.class.isAssignableFrom(type.getType());
 	}
 
 	/*

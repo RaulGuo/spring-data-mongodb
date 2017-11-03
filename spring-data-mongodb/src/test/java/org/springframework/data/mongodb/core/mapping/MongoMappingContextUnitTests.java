@@ -18,11 +18,15 @@ package org.springframework.data.mongodb.core.mapping;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 
+import org.bson.Document;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -30,10 +34,12 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.PersistentProperty;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
-import org.springframework.data.mapping.MappingException;
+import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
 
 import com.mongodb.DBRef;
 
@@ -61,11 +67,21 @@ public class MongoMappingContextUnitTests {
 		context.initialize();
 	}
 
-	@Test
+	@Test // DATAMONGO-1819
 	public void doesNotReturnPersistentEntityForMongoSimpleType() {
 
+		MongoCustomConversions conversions = new MongoCustomConversions(Collections.emptyList());
+		conversions.registerConvertersIn(new GenericConversionService());
+
 		MongoMappingContext context = new MongoMappingContext();
+		context.setSimpleTypeHolder(conversions.getSimpleTypeHolder());
+		context.afterPropertiesSet();
+
 		assertThat(context.getPersistentEntity(DBRef.class), is(nullValue()));
+		assertThat(context.getPersistentEntity(Document.class), is(nullValue()));
+		assertThat(context.getPersistentEntity(Instant.class), is(nullValue()));
+		assertThat(context.getPersistentEntity(LocalDateTime.class), is(nullValue()));
+		assertThat(context.getPersistentEntity(LocalDate.class), is(nullValue()));
 	}
 
 	@Test // DATAMONGO-638

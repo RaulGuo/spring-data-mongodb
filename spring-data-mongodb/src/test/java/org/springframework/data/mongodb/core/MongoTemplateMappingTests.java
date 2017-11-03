@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 the original author or authors.
+ * Copyright 2011-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,18 +26,15 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.dao.DataAccessException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import com.mongodb.MongoException;
-import com.mongodb.client.MongoCollection;
-
 /**
  * Integration test for {@link MongoTemplate}.
- * 
+ *
  * @author Oliver Gierke
  * @author Thomas Risberg
+ * @author Mark Paluch
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration("classpath:template-mapping.xml")
@@ -51,7 +48,7 @@ public class MongoTemplateMappingTests {
 
 	@Before
 	public void setUp() {
-		template1.dropCollection(template1.getCollectionName(Person.class));
+		template1.dropCollection("person");
 	}
 
 	@Test
@@ -59,7 +56,6 @@ public class MongoTemplateMappingTests {
 
 		addAndRetrievePerson(template1);
 		checkPersonPersisted(template1);
-
 	}
 
 	@Test
@@ -67,26 +63,26 @@ public class MongoTemplateMappingTests {
 
 		addAndRetrievePerson(template2);
 		checkPersonPersisted(template2);
-
 	}
 
-	private void addAndRetrievePerson(MongoTemplate template) {
+	private static void addAndRetrievePerson(MongoTemplate template) {
+
 		Person person = new Person("Oliver");
 		person.setAge(25);
-		template.insert(person);
+		template.insert(person, "person");
 
-		Person result = template.findById(person.getId(), Person.class);
+		Person result = template.findById(person.getId(), Person.class, "person");
 		assertThat(result.getFirstName(), is("Oliver"));
 		assertThat(result.getAge(), is(25));
 	}
 
 	private void checkPersonPersisted(MongoTemplate template) {
-		template.execute(Person.class, new CollectionCallback<Object>() {
-			public Object doInCollection(MongoCollection<Document> collection) throws MongoException, DataAccessException {
-				Document document = collection.find(new Document()).first();
-				assertThat((String) document.get("name"), is("Oliver"));
-				return null;
-			}
+
+		template.execute("person", collection -> {
+
+			Document document = collection.find(new Document()).first();
+			assertThat(document.get("name"), is("Oliver"));
+			return null;
 		});
 	}
 }
